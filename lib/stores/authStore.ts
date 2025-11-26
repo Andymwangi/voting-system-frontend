@@ -20,11 +20,12 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isInitialized: boolean;
 }
 
 interface AuthActions {
   login: (credentials: LoginRequest) => Promise<void>;
-  register: (data: RegisterUserRequest) => Promise<void>;
+  register: (data: RegisterUserRequest) => Promise<any>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   clearError: () => void;
@@ -41,6 +42,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      isInitialized: false,
 
       // Actions
       login: async (credentials: LoginRequest) => {
@@ -78,16 +80,19 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await registerUser(data);
-          const { user, tokens } = response.data.data!;
-
-          saveTokens(tokens);
+          // Don't authenticate user yet - they need to verify email first
+          // Clear any existing tokens
+          clearTokens();
           set({
-            user,
-            tokens,
-            isAuthenticated: true,
+            user: null,
+            tokens: null,
+            isAuthenticated: false,
             isLoading: false,
             error: null,
           });
+
+          // Return response data for useAuth to check emailVerificationSent
+          return response.data.data;
         } catch (error: any) {
           set({
             isLoading: false,
@@ -137,30 +142,53 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       setLoading: (loading: boolean) => set({ isLoading: loading }),
 
       initialize: async () => {
+        // Prevent multiple simultaneous initializations
+        if (get().isInitialized || get().isLoading) {
+          return;
+        }
+
         const token = getAccessToken();
         if (token) {
           try {
             set({ isLoading: true });
-            const response = await getUserProfile();
+
+            // Create a timeout promise (reduced to 3 seconds for faster feedback)
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
+            });
+
+            // Race between profile fetch and timeout
+            const response = await Promise.race([
+              getUserProfile(),
+              timeoutPromise
+            ]) as any;
+
             const user = response.data.data!;
 
             set({
               user,
               isAuthenticated: true,
               isLoading: false,
+              isInitialized: true,
             });
-          } catch (error) {
+          } catch (error: any) {
             console.error('Failed to initialize auth:', error);
-            clearTokens();
+
+            // Only clear tokens if it's a 401 (unauthorized), not on timeout
+            if (error.response?.status === 401) {
+              clearTokens();
+            }
+
             set({
               user: null,
               tokens: null,
               isAuthenticated: false,
               isLoading: false,
+              isInitialized: true, // Mark as initialized even on failure to prevent retries
             });
           }
         } else {
-          set({ isLoading: false });
+          set({ isLoading: false, isInitialized: true });
         }
       },
     }),

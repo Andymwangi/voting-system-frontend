@@ -102,6 +102,41 @@ export async function confirmPasswordReset(data: PasswordResetConfirm): Promise<
   return authApi.post(API_ENDPOINTS.AUTH.PASSWORD_RESET_CONFIRM, data);
 }
 
+export async function verifyPasswordResetToken(token: string): Promise<AxiosResponse<ApiResponse<{
+  valid: boolean;
+  email?: string;
+  message?: string;
+}>>> {
+  return authApi.get(`/auth/password-reset/verify/${token}`);
+}
+
+export async function setPasswordWithToken(data: {
+  token: string;
+  newPassword: string;
+  confirmPassword?: string;
+}): Promise<AxiosResponse<ApiResponse<{
+  success: boolean;
+  message: string;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+  tokens?: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}>>> {
+  // Include confirmPassword if not provided (use newPassword value)
+  const requestData = {
+    ...data,
+    confirmPassword: data.confirmPassword || data.newPassword,
+  };
+  return authApi.post(API_ENDPOINTS.AUTH.PASSWORD_RESET_CONFIRM, requestData);
+}
+
 export async function changePassword(data: {
   currentPassword: string;
   newPassword: string;
@@ -147,14 +182,26 @@ export async function revokeSession(sessionId: string): Promise<AxiosResponse<Ap
 
 // Helper functions
 export function saveTokens(tokens: TokenPair): void {
+  // Save to localStorage for API calls
   localStorage.setItem('unielect-voting-access-token', tokens.accessToken);
   localStorage.setItem('unielect-voting-refresh-token', tokens.refreshToken);
+
+  // Save to cookies for middleware (server-side access)
+  // Access token expires in 15 minutes (900 seconds)
+  document.cookie = `unielect-voting-access-token=${tokens.accessToken}; path=/; max-age=900; SameSite=Lax`;
+  // Refresh token expires in 7 days (604800 seconds)
+  document.cookie = `unielect-voting-refresh-token=${tokens.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
 }
 
 export function clearTokens(): void {
+  // Clear from localStorage
   localStorage.removeItem('unielect-voting-access-token');
   localStorage.removeItem('unielect-voting-refresh-token');
   localStorage.removeItem('unielect-voting-user');
+
+  // Clear from cookies
+  document.cookie = 'unielect-voting-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'unielect-voting-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
 export function getAccessToken(): string | null {

@@ -2,48 +2,59 @@
 
 import React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { RegisterForm } from "@/components/auth/RegisterForm"
-import { ConditionalAuth } from "@/components/auth/AuthGuard"
-import { redirect } from "next/navigation"
+import { ThemeToggle } from "@/components/shared/ThemeToggle"
 
 export default function RegisterPage() {
   return (
-    <ConditionalAuth
-      when="unauthenticated"
-      fallback={<>{redirect("/dashboard")}</>}
-    >
-      <div className="min-h-screen flex">
-        {/* Left Side - Banner Image */}
-        <div className="hidden lg:flex lg:flex-1 relative bg-gradient-to-br from-purple-600 to-blue-600">
-          <div className="absolute inset-0 flex items-center justify-center p-12">
-            <div className="max-w-2xl">
-              <div className="mb-8">
-                <h2 className="text-4xl font-bold text-white mb-4">
-                  Join UniElect Today
-                </h2>
-                <p className="text-xl text-purple-100">
-                  Be part of the democratic process. Register now to participate in electing
-                  your student leaders and making your voice heard.
-                </p>
-              </div>
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/images/vote-illustration2.jpg"
-                  alt="Online voting platform"
-                  width={600}
-                  height={450}
-                  className="w-full h-auto"
-                />
+    <>
+      {/* Prefetch verify-email page */}
+      <Link href="/verify-email" prefetch={true} style={{ display: 'none' }} aria-hidden="true" />
+
+      <div className="min-h-screen relative flex items-center justify-center">
+        {/* Background */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/vote-illustration2.jpg"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-sage-900/90 via-emerald-900/85 to-green-900/90"></div>
+        </div>
+
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-30">
+          <ThemeToggle />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-lg mx-auto px-4 py-8">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/unielect-logo.jpg"
+                alt="UniElect"
+                width={44}
+                height={44}
+                className="rounded-xl shadow-lg"
+              />
+              <div>
+                <h2 className="text-xl font-bold text-white">UniElect</h2>
+                <p className="text-sage-300 text-xs font-medium">Student Voting Portal</p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Side - Auth Form */}
-        <div className="flex-1 flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-          <RegisterForm redirectTo="/verify-email" />
+          {/* Form Card */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[80vh] overflow-y-auto">
+            <RegisterForm redirectTo="/verify-email" />
+          </div>
         </div>
       </div>
-    </ConditionalAuth>
+    </>
   )
 }

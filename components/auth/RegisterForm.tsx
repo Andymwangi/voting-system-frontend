@@ -66,32 +66,50 @@ export function RegisterForm({ className, onSuccess }: RegisterFormProps) {
   const passwordStrength = password ? getPasswordStrength(password) : { score: 0, feedback: [], isValid: false }
 
   const onSubmit = async (data: RegistrationFormData) => {
+    console.log('[RegisterForm] onSubmit called!')
+    console.log('[RegisterForm] Form data:', { ...data, password: '[REDACTED]', confirmPassword: '[REDACTED]' })
+
     setIsLoading(true)
     setRegisterError("")
 
     try {
+      console.log('[RegisterForm] Calling register...')
       await register(data)
+      console.log('[RegisterForm] Registration successful!')
 
-      // If registration succeeds without error, redirect or call onSuccess
+      // INSTANT REDIRECT: Navigate immediately after successful registration
+      console.log('[RegisterForm] Initiating redirect to verify-email...')
+
+      // Use router.push for instant redirect
       if (onSuccess) {
         onSuccess()
       } else {
+        // Don't set isLoading to false - let the redirect happen with loading state
         router.push("/verify-email")
       }
     } catch (error: any) {
-      setRegisterError(error.message || "Registration failed. Please try again.")
-    } finally {
-      setIsLoading(false)
+      console.error('[RegisterForm] Registration failed:', error)
+      const errorMessage = error.response?.data?.message || error.message || "Registration failed. Please try again."
+      setRegisterError(errorMessage)
+      setIsLoading(false) // Only set loading to false on error
     }
   }
 
   const nextStep = () => {
+    console.log('[RegisterForm] Next step button clicked, current step:', step)
     const fieldsToValidate = step === 1
       ? ["studentId", "email", "firstName", "lastName", "password", "confirmPassword"] as const
       : ["phone", "faculty", "department", "course", "yearOfStudy", "admissionYear"] as const
 
+    console.log('[RegisterForm] Validating fields:', fieldsToValidate)
+
     form.trigger(fieldsToValidate).then((isValid) => {
+      console.log('[RegisterForm] Validation result:', isValid)
+      if (!isValid) {
+        console.error('[RegisterForm] Validation errors:', form.formState.errors)
+      }
       if (isValid) {
+        console.log('[RegisterForm] Moving to step 2')
         setStep(2)
       }
     })
@@ -104,30 +122,28 @@ export function RegisterForm({ className, onSuccess }: RegisterFormProps) {
   const admissionYears = Array.from({ length: 10 }, (_, i) => currentYear - i)
 
   return (
-    <div className={cn("w-full max-w-2xl mx-auto", className)}>
-      <div className="text-center mb-8">
-        <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-          <Shield className="h-6 w-6 text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Create Your UniElect Account
+    <div className={cn("w-full", className)}>
+      {/* Header */}
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Create Your Account
         </h1>
-        <p className="text-gray-600 mt-2">
-          Join the secure digital voting platform for UniElect students
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
+          Join the secure digital voting platform
         </p>
       </div>
 
       {/* Progress indicator */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className={cn("text-sm font-medium", step >= 1 ? "text-blue-600" : "text-gray-400")}>
+          <span className={cn("text-xs font-medium", step >= 1 ? "text-sage-600 dark:text-sage-400" : "text-gray-400")}>
             Personal Info
           </span>
-          <span className={cn("text-sm font-medium", step >= 2 ? "text-blue-600" : "text-gray-400")}>
+          <span className={cn("text-xs font-medium", step >= 2 ? "text-sage-600 dark:text-sage-400" : "text-gray-400")}>
             Academic Details
           </span>
         </div>
-        <Progress value={step * 50} className="h-2" />
+        <Progress value={step * 50} className="h-1.5" />
       </div>
 
       {registerError && (
@@ -356,10 +372,10 @@ export function RegisterForm({ className, onSuccess }: RegisterFormProps) {
               <Button
                 type="button"
                 onClick={nextStep}
-                className="w-full"
+                className="w-full h-11 bg-gradient-to-r from-sage-600 to-emerald-600 hover:from-sage-700 hover:to-emerald-700 text-white shadow-lg shadow-sage-500/20 font-semibold"
                 disabled={isLoading}
               >
-                Continue to Academic Details
+                Continue
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </>
@@ -505,19 +521,19 @@ export function RegisterForm({ className, onSuccess }: RegisterFormProps) {
                 />
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={prevStep}
-                  className="flex-1"
+                  className="flex-1 h-11 border-sage-200 dark:border-sage-800 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-900/20 font-semibold"
                   disabled={isLoading}
                 >
                   Back
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1"
+                  className="flex-1 h-11 bg-gradient-to-r from-sage-600 to-emerald-600 hover:from-sage-700 hover:to-emerald-700 text-white shadow-lg shadow-sage-500/20 font-semibold"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -534,23 +550,33 @@ export function RegisterForm({ className, onSuccess }: RegisterFormProps) {
       </Form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-blue-600 hover:text-blue-700"
+            className="font-semibold text-sage-600 dark:text-sage-400 hover:text-sage-700 dark:hover:text-sage-300"
           >
             Sign in here
           </Link>
         </p>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
-            <Shield className="h-3 w-3" />
-            <span>Your data is protected by UniElect security standards</span>
-          </div>
+      <div className="mt-3 text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Want to run for a position?{" "}
+          <Link
+            href="/register/candidate"
+            className="font-semibold text-sage-600 dark:text-sage-400 hover:text-sage-700 dark:hover:text-sage-300"
+          >
+            Apply as a candidate
+          </Link>
+        </p>
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+          <Shield className="h-3.5 w-3.5 text-sage-600 dark:text-sage-400" />
+          <span>Secured by UniElect Authentication</span>
         </div>
       </div>
     </div>

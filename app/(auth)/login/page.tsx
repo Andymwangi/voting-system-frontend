@@ -1,47 +1,80 @@
 "use client"
 
-import React from "react"
+import React, { useEffect } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { LoginForm } from "@/components/auth/LoginForm"
-import { AuthGuard } from "@/components/auth/AuthGuard"
 import { ConditionalAuth } from "@/components/auth/AuthGuard"
-import { redirect } from "next/navigation"
+import { useAuth } from "@/lib/hooks/useAuth"
+import { ThemeToggle } from "@/components/shared/ThemeToggle"
 
 export default function LoginPage() {
+  const router = useRouter()
+  const { isAuthenticated, isLoading, user } = useAuth()
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const redirectUrl =
+        user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.role === 'MODERATOR'
+          ? '/admin/dashboard'
+          : '/dashboard'
+      router.push(redirectUrl)
+    }
+  }, [isAuthenticated, isLoading, user, router])
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault()
+        router.push('/system/auth')
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [router])
+
   return (
-    <ConditionalAuth
-      when="unauthenticated"
-      fallback={<>{redirect("/dashboard")}</>}
-    >
-      <div className="min-h-screen flex">
-        {/* Left Side - Auth Form */}
-        <div className="flex-1 flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-          <LoginForm redirectTo="/dashboard" />
+    <ConditionalAuth when="unauthenticated" fallback={null}>
+      <div className="min-h-screen relative flex items-center justify-center">
+        {/* Background */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/vote-illustration3.jpg"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-sage-900/90 via-emerald-900/85 to-green-900/90"></div>
         </div>
 
-        {/* Right Side - Banner Image */}
-        <div className="hidden lg:flex lg:flex-1 relative bg-gradient-to-br from-blue-600 to-purple-600">
-          <div className="absolute inset-0 flex items-center justify-center p-12">
-            <div className="max-w-2xl">
-              <div className="mb-8">
-                <h2 className="text-4xl font-bold text-white mb-4">
-                  Welcome to UniElect
-                </h2>
-                <p className="text-xl text-blue-100">
-                  Secure and transparent platform for university student leader elections.
-                  Your voice matters in shaping campus democracy.
-                </p>
-              </div>
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/images/vote-illustration3.jpg"
-                  alt="Student leaders campaigning"
-                  width={600}
-                  height={450}
-                  className="w-full h-auto"
-                />
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-30">
+          <ThemeToggle />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-md mx-auto px-4 py-8">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/unielect-logo.jpg"
+                alt="UniElect"
+                width={44}
+                height={44}
+                className="rounded-xl shadow-lg"
+              />
+              <div>
+                <h2 className="text-xl font-bold text-white">UniElect</h2>
+                <p className="text-sage-300 text-xs font-medium">Student Voting Portal</p>
               </div>
             </div>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 sm:p-8">
+            <LoginForm redirectTo="/dashboard" />
           </div>
         </div>
       </div>

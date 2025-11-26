@@ -246,7 +246,11 @@ export function ConditionalAuth({ children, when, fallback }: ConditionalAuthPro
   const { isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) {
-    return <LoadingSpinner size="sm" />
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
   }
 
   const shouldShow = when === 'authenticated' ? isAuthenticated : !isAuthenticated
