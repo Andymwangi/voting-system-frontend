@@ -10,7 +10,8 @@ const spinnerVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-primary",
+        default: "text-sage-600 dark:text-sage-400",
+        gradient: "text-transparent bg-clip-text bg-gradient-to-r from-sage-600 to-emerald-600",
         secondary: "text-secondary",
         muted: "text-muted-foreground",
         destructive: "text-destructive",
@@ -21,10 +22,10 @@ const spinnerVariants = cva(
       size: {
         xs: "h-3 w-3",
         sm: "h-4 w-4",
-        default: "h-6 w-6",
-        lg: "h-8 w-8",
-        xl: "h-12 w-12",
-        "2xl": "h-16 w-16",
+        default: "h-5 w-5",
+        lg: "h-6 w-6",
+        xl: "h-8 w-8",
+        "2xl": "h-12 w-12",
       },
       speed: {
         slow: "animate-spin-slow",
@@ -134,7 +135,7 @@ export function PageLoading({ text = "Loading page...", className }: PageLoading
     <LoadingSpinner
       fullScreen
       center
-      size="xl"
+      size="lg"
       text={text}
       className={className}
     />
@@ -209,7 +210,7 @@ interface VotingLoadingProps {
 export function VotingLoading({ step = "Preparing ballot...", progress }: VotingLoadingProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
-      <LoadingSpinner size="xl" variant="default" className="mb-6" />
+      <LoadingSpinner size="lg" variant="default" className="mb-6" />
 
       <h3 className="text-lg font-semibold text-center mb-2">
         Processing Your Vote
@@ -223,7 +224,7 @@ export function VotingLoading({ step = "Preparing ballot...", progress }: Voting
         <div className="w-full max-w-md">
           <div className="bg-muted rounded-full h-2">
             <div
-              className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+              className="bg-gradient-to-r from-sage-600 to-emerald-600 h-2 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

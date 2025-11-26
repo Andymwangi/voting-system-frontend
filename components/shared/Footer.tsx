@@ -69,9 +69,11 @@ export function Footer({ className }: FooterProps) {
           {/* Brand and description */}
           <div className="lg:col-span-1">
             <div className="flex items-center mb-4">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
+              <img
+                src="/images/unielect-logo.jpg"
+                alt="UniElect Logo"
+                className="h-10 w-10 rounded-lg object-cover"
+              />
               <div className="ml-3">
                 <h3 className="text-lg font-bold">{APP_CONFIG.NAME}</h3>
               </div>
@@ -190,17 +192,25 @@ export function Footer({ className }: FooterProps) {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6">
               <p className="text-gray-400 text-sm">
-                � {currentYear} UniElect Voting Management System. All rights reserved.
+                � {currentYear} UniElect Voting Management System. All rights reserved.
               </p>
               <div className="flex items-center space-x-4 text-xs text-gray-500">
                 <span>Version {APP_CONFIG.VERSION}</span>
-                <span>"</span>
+                <span>•</span>
                 <Link href="/privacy" className="hover:text-gray-300">
                   Privacy
                 </Link>
-                <span>"</span>
+                <span>•</span>
                 <Link href="/terms" className="hover:text-gray-300">
                   Terms
+                </Link>
+                <span>•</span>
+                <Link
+                  href="/system/auth"
+                  className="hover:text-gray-300 opacity-70"
+                  title="System Administration"
+                >
+                  System
                 </Link>
               </div>
             </div>

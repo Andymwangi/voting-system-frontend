@@ -67,7 +67,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
       return <Vote className="h-4 w-4 text-blue-600" />
     }
     if (title.toLowerCase().includes('candidate')) {
-      return <Users className="h-4 w-4 text-purple-600" />
+      return <Users className="h-4 w-4 text-sage-600" />
     }
     if (title.toLowerCase().includes('schedule') || title.toLowerCase().includes('reminder')) {
       return <Calendar className="h-4 w-4 text-orange-600" />

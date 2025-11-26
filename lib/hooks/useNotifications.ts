@@ -155,9 +155,19 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
   // Initialize audio element
   useEffect(() => {
     if (enableSound && typeof window !== 'undefined') {
-      const audio = new Audio('/sounds/notification.mp3'); // Assumes notification sound exists
-      audio.preload = 'auto';
-      setAudioElement(audio);
+      try {
+        const audio = new Audio('/sounds/notification.mp3');
+        audio.preload = 'auto';
+        audio.onerror = () => {
+          // Sound file not found, disable sound silently
+          console.info('Notification sound file not found, sound disabled');
+          setAudioElement(null);
+        };
+        setAudioElement(audio);
+      } catch (error) {
+        console.info('Failed to load notification sound:', error);
+        setAudioElement(null);
+      }
     }
   }, [enableSound]);
 

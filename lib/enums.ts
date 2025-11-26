@@ -10,6 +10,7 @@ export enum UserRole {
 
 export enum ElectionType {
   PRESIDENTIAL = 'PRESIDENTIAL',
+  STUDENT_UNION = 'STUDENT_UNION',
   DEPARTMENTAL = 'DEPARTMENTAL',
   FACULTY = 'FACULTY',
   CLUB = 'CLUB',
@@ -369,6 +370,7 @@ export const YEAR_OF_STUDY_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
 
 export const ELECTION_TYPE_LABELS: Record<ElectionType, string> = {
   [ElectionType.PRESIDENTIAL]: 'Presidential',
+  [ElectionType.STUDENT_UNION]: 'Student Union',
   [ElectionType.DEPARTMENTAL]: 'Departmental',
   [ElectionType.FACULTY]: 'Faculty',
   [ElectionType.CLUB]: 'Club',

@@ -15,7 +15,7 @@ import {
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  TIMEOUT: 30000,
+  TIMEOUT: 60000, // 60 seconds - increased for election creation with positions
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
 } as const;
@@ -234,7 +234,7 @@ export const VALIDATION_RULES = {
     STUDENT_ID: {
       PATTERN: /^[A-Z]{2,3}\d{2,3}-\d{4}\/\d{4}$/,
       MIN_LENGTH: 12,
-      MAX_LENGTH: 15,
+      MAX_LENGTH: 20,
     },
     EMAIL: {
       PATTERN: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,

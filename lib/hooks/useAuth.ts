@@ -37,6 +37,7 @@ interface UseAuthReturn {
   user: SafeUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
 
   // Core Authentication
@@ -90,6 +91,7 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
     user,
     isAuthenticated,
     isLoading,
+    isInitialized,
     error,
     login: storeLogin,
     register: storeRegister,
@@ -99,12 +101,13 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
     initialize
   } = useAuthStore();
 
-  // Initialize auth on mount
+  // Initialize auth on mount - only once per session
   useEffect(() => {
-    if (autoInitialize) {
-      initialize();
+    if (autoInitialize && !isLoading && !user) {
+      // Non-blocking initialize call
+      initialize().catch(err => console.error('Auth initialization failed:', err));
     }
-  }, [initialize, autoInitialize]);
+  }, [autoInitialize]); // Removed initialize and isLoading from deps to prevent re-runs
 
   // Redirect if auth is required but user is not authenticated
   useEffect(() => {
@@ -126,11 +129,25 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
   }, [storeLogin, toast]);
 
   const register = useCallback(async (data: RegisterUserRequest) => {
+    console.log('[useAuth] Registration started', { studentId: data.studentId, email: data.email });
     try {
-      await storeRegister(data);
-      toast.success('Registration Successful', 'Please check your email for verification.');
+      console.log('[useAuth] Calling storeRegister...');
+      const response = await storeRegister(data);
+      console.log('[useAuth] Registration successful', response);
+
+      // Check if verification email was sent successfully
+      const emailSent = response?.emailVerificationSent !== false; // Default to true if not specified
+      if (emailSent) {
+        toast.success('Registration Successful', 'Please check your email for verification.');
+      } else {
+        toast.warning('Registration Successful', 'Account created but email failed to send. You can request a new verification email.');
+      }
+
+      return response; // Return response for RegisterForm to check
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
+      console.error('[useAuth] Registration error:', error);
+      console.error('[useAuth] Error response:', error.response?.data);
+      const message = error.response?.data?.message || error.message || 'Registration failed';
       toast.error('Registration Failed', message);
       throw error;
     }
@@ -324,6 +341,7 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
     user,
     isAuthenticated,
     isLoading,
+    isInitialized,
     error,
 
     // Core Authentication

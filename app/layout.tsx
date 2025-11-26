@@ -5,9 +5,11 @@ import { Providers } from "@/components/providers/Providers"
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils/cn"
 
+// Inter - Modern professional font for the entire application
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap"
 })
 
@@ -90,14 +92,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#2563eb" />
+        <meta name="theme-color" content="#528068" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#2563eb" />
-        <meta name="msapplication-TileColor" content="#2563eb" />
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#528068" />
+        <meta name="msapplication-TileColor" content="#528068" />
         <meta name="application-name" content="UniElect Voting" />
         <meta name="apple-mobile-web-app-title" content="UniElect Voting" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -113,7 +115,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* Content Security Policy */}
         <meta
           httpEquiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; media-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
+          content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* https:; media-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self';"
         />
       </head>
       <body
@@ -136,7 +138,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           {/* Accessibility Skip Link */}
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-sage-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2"
           >
             Skip to main content
           </a>

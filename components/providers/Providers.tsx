@@ -3,6 +3,7 @@
 import React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SessionProvider } from "@/components/auth/SessionProvider"
+import { ThemeProvider } from "@/components/providers/ThemeProvider"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,9 +36,11 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        {children}
-      </SessionProvider>
+      <ThemeProvider defaultTheme="system">
+        <SessionProvider>
+          {children}
+        </SessionProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }
