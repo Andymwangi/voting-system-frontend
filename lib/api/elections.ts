@@ -27,6 +27,13 @@ electionsApi.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('Elections API Request:', {
+    method: config.method,
+    url: config.url,
+    baseURL: config.baseURL,
+    fullURL: `${config.baseURL}${config.url}`,
+    hasToken: !!token
+  });
   return config;
 });
 
@@ -34,8 +41,20 @@ export async function getElections(params?: {
   page?: number;
   limit?: number;
   filters?: ElectionFilters;
+  [key: string]: any; // Allow additional flat params for backward compatibility
 }): Promise<AxiosResponse<ApiResponse<PaginatedResponse<Election>>>> {
-  return electionsApi.get(API_ENDPOINTS.ELECTIONS.LIST, { params });
+  // Flatten filters into query params to match backend expectations
+  // Support both nested filters and flat params for backward compatibility
+  const { page, limit, filters, ...otherParams } = params || {};
+
+  const queryParams: any = {
+    page,
+    limit,
+    ...filters,     // Spread nested filters if provided
+    ...otherParams  // Spread any flat params (search, status, type, etc.)
+  };
+
+  return electionsApi.get(API_ENDPOINTS.ELECTIONS.LIST, { params: queryParams });
 }
 
 export async function getActiveElections(): Promise<AxiosResponse<ApiResponse<Election[]>>> {

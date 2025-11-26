@@ -25,7 +25,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 import { getVoteReceipt } from "@/lib/api/votes"
-import { VoteReceipt as VoteReceiptType, Election, Position, Candidate } from "@/lib/types"
+import type { VoteReceipt as VoteReceiptType, Election, Position, Candidate } from "@/lib/types"
 import { cn } from "@/lib/utils/cn"
 import { format } from "date-fns"
 

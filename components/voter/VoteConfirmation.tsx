@@ -169,7 +169,7 @@ export function VoteConfirmation({
                 <div key={vote.positionId} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <Award className="h-4 w-4 text-purple-500" />
+                      <Award className="h-4 w-4 text-sage-500" />
                       <h3 className="font-semibold">{position.name}</h3>
                       <Badge variant="outline" className="text-xs">
                         {position.maxSelections === 1 ? "Single choice" : `Up to ${position.maxSelections} choices`}

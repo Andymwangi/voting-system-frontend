@@ -47,12 +47,17 @@ export default function ElectionDetailsPage() {
   })
 
   const { data: candidatesResponse, isLoading: candidatesLoading } = useQuery({
-    queryKey: ['candidates', electionId],
-    queryFn: () => getCandidatesByElection(electionId),
+    queryKey: ['candidates', electionId, 'APPROVED'],
+    queryFn: () => getCandidatesByElection(electionId, { status: 'APPROVED' }),
     enabled: !!electionId,
+    refetchInterval: election?.status === 'ACTIVE' ? 30000 : false, // Refetch every 30s for active elections
+    staleTime: 60000, // Consider data stale after 1 minute
   })
 
-  const candidates = candidatesResponse?.data?.data || []
+  // Ensure candidates is always an array
+  // Response structure: { data: { data: { candidates: [...], total, pages } } }
+  const candidatesData = candidatesResponse?.data?.data?.candidates || candidatesResponse?.data?.data
+  const candidates = Array.isArray(candidatesData) ? candidatesData : []
 
   const [selectedTab, setSelectedTab] = useState("overview")
 
@@ -266,7 +271,7 @@ export default function ElectionDetailsPage() {
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <Award className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                    <Award className="h-6 w-6 text-sage-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold">{candidates?.length || 0}</div>
                     <div className="text-sm text-gray-600">Candidates</div>
                   </CardContent>
@@ -358,7 +363,7 @@ export default function ElectionDetailsPage() {
                     <Card key={positionId}>
                       <CardHeader>
                         <CardTitle className="flex items-center">
-                          <Award className="h-5 w-5 mr-2 text-purple-600" />
+                          <Award className="h-5 w-5 mr-2 text-sage-600" />
                           {position.name}
                         </CardTitle>
                         <CardDescription>

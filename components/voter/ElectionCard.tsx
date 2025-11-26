@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React from "react"
@@ -22,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { getVotingStatus } from "@/lib/api/votes"
-import { Election } from "@/lib/types"
+import type { Election } from "@/lib/types"
 import { ElectionStatus, ElectionType } from "@/lib/enums"
 import { cn } from "@/lib/utils/cn"
 import { formatDistanceToNow, format, isAfter, isBefore } from "date-fns"
@@ -118,7 +119,7 @@ export function ElectionCard({
   const getElectionTypeInfo = () => {
     switch (election.type) {
       case ElectionType.PRESIDENTIAL:
-        return { label: "Presidential", color: "bg-purple-100 text-purple-700" }
+        return { label: "Presidential", color: "bg-sage-100 text-sage-700" }
       case ElectionType.FACULTY:
         return { label: "Faculty", color: "bg-green-100 text-green-700" }
       case ElectionType.DEPARTMENTAL:
@@ -128,7 +129,7 @@ export function ElectionCard({
       case ElectionType.SOCIETY:
         return { label: "Society", color: "bg-pink-100 text-pink-700" }
       case ElectionType.REFERENDUM:
-        return { label: "Referendum", color: "bg-indigo-100 text-indigo-700" }
+        return { label: "Referendum", color: "bg-emerald-100 text-emerald-700" }
       case ElectionType.POLL:
         return { label: "Poll", color: "bg-teal-100 text-teal-700" }
       default:
@@ -297,7 +298,7 @@ export function ElectionCard({
           </Link>
 
           {canVote() && (
-            <Link href={`/elections/${election.id}/vote`} className="flex-1">
+            <Link href={`/vote/${election.id}`} className="flex-1">
               <Button className="w-full bg-green-600 hover:bg-green-700">
                 <Vote className="h-4 w-4 mr-2" />
                 Vote Now
@@ -307,7 +308,7 @@ export function ElectionCard({
           )}
 
           {election.status === ElectionStatus.COMPLETED && (
-            <Link href={`/elections/${election.id}/results`} className="flex-1">
+            <Link href={`/results/${election.id}`} className="flex-1">
               <Button variant="outline" className="w-full">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 View Results

@@ -22,6 +22,7 @@ interface ElectionState {
   isLoading: boolean;
   error: string | null;
   filters: ElectionFilters;
+  hasInitialFetch: boolean; // Track if initial fetch has been completed
 }
 
 interface ElectionActions {
@@ -48,10 +49,17 @@ export const useElectionStore = create<ElectionState & ElectionActions>((set, ge
   isLoading: false,
   error: null,
   filters: {},
+  hasInitialFetch: false,
 
   // Actions
   fetchElections: async (filters?: ElectionFilters) => {
-    set({ isLoading: true, error: null });
+    // Prevent duplicate fetches if already loading OR already fetched
+    if (get().isLoading || get().hasInitialFetch) {
+      return;
+    }
+
+    // Set BOTH flags immediately to prevent race conditions
+    set({ isLoading: true, hasInitialFetch: true, error: null });
     try {
       const response = await getElections({ filters });
       const elections = response.data.data!.data;

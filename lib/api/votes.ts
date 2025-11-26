@@ -50,7 +50,11 @@ export async function completeVotingSession(sessionId: string): Promise<AxiosRes
 
 // POST /votes/cast - Cast votes
 export async function castVotes(data: BallotData): Promise<AxiosResponse<ApiResponse<VoteReceipt>>> {
-  return votesApi.post(API_ENDPOINTS.VOTES.CAST, data);
+  // Backend expects { sessionId, ballot } format where ballot is the votes array
+  return votesApi.post(API_ENDPOINTS.VOTES.CAST, {
+    sessionId: data.sessionId,
+    ballot: data.votes
+  });
 }
 
 // POST /votes/verify - Verify vote
@@ -65,7 +69,15 @@ export async function getVerificationStatus(verificationCode: string): Promise<A
 
 // POST /votes/validate-ballot - Validate ballot structure
 export async function validateBallot(data: BallotData): Promise<AxiosResponse<ApiResponse<{ valid: boolean; errors?: string[] }>>> {
-  return votesApi.post(API_ENDPOINTS.VOTES.VALIDATE_BALLOT, data);
+  // Backend expects { electionId, ballot } where ballot is the votes array
+  const payload = {
+    electionId: data.electionId,
+    ballot: data.votes  // Send votes array, not the entire BallotData object
+  };
+
+  console.log('validateBallot called with:', { data, payload });
+
+  return votesApi.post(API_ENDPOINTS.VOTES.VALIDATE_BALLOT, payload);
 }
 
 // GET /votes/elections/:electionId/ballot - Get election ballot

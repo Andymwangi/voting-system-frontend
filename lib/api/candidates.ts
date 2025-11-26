@@ -19,13 +19,42 @@ candidatesApi.interceptors.request.use((config) => {
 });
 
 // GET /candidates/election/:electionId - Get candidates by election
-export async function getCandidatesByElection(electionId: string): Promise<AxiosResponse<ApiResponse<Candidate[]>>> {
-  return candidatesApi.get(API_ENDPOINTS.CANDIDATES.BY_ELECTION(electionId));
+export async function getCandidatesByElection(
+  electionId: string,
+  params?: {
+    positionId?: string;
+    status?: string;
+    faculty?: string;
+    department?: string;
+    course?: string;
+    yearOfStudy?: number;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }
+): Promise<AxiosResponse<ApiResponse<{
+  candidates: Candidate[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+}>>> {
+  return candidatesApi.get(API_ENDPOINTS.CANDIDATES.BY_ELECTION(electionId), { params });
 }
 
 // GET /candidates/position/:positionId - Get candidates by position
-export async function getCandidatesByPosition(positionId: string): Promise<AxiosResponse<ApiResponse<Candidate[]>>> {
-  return candidatesApi.get(API_ENDPOINTS.CANDIDATES.BY_POSITION(positionId));
+export async function getCandidatesByPosition(
+  positionId: string,
+  params?: {
+    status?: string;
+    search?: string;
+  }
+): Promise<AxiosResponse<ApiResponse<Candidate[]>>> {
+  return candidatesApi.get(API_ENDPOINTS.CANDIDATES.BY_POSITION(positionId), { params });
 }
 
 // GET /candidates/:id - Get candidate by ID

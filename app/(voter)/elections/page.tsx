@@ -48,14 +48,16 @@ type SortOption = "title" | "startDate" | "endDate" | "created"
 type SortDirection = "asc" | "desc"
 
 export default function ElectionsPage() {
-  const { elections, isLoading, error, fetchElections } = useElections()
-
-  // Auto-fetch elections on mount
-  React.useEffect(() => {
-    if (!isLoading && !elections?.length) {
-      fetchElections().catch(console.error)
-    }
-  }, [isLoading, elections, fetchElections])
+  const {
+    elections,
+    activeElections,
+    eligibleElections,
+    isLoading,
+    error,
+    fetchElections,
+    fetchActiveElections,
+    fetchEligibleElections
+  } = useElections({ autoFetch: true })
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -63,10 +65,29 @@ export default function ElectionsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
 
-  const filteredAndSortedElections = useMemo(() => {
-    if (!elections) return []
+  // Combine elections from different sources for voters
+  const allElections = useMemo(() => {
+    // Merge active, eligible, and regular elections, removing duplicates
+    const electionsMap = new Map<string, any>()
 
-    let filtered = elections.filter((election) => {
+    // Ensure all arrays have default values to prevent iteration errors
+    const safeActiveElections = activeElections || []
+    const safeEligibleElections = eligibleElections || []
+    const safeElections = elections || []
+
+    ;[...safeActiveElections, ...safeEligibleElections, ...safeElections].forEach(election => {
+      if (!electionsMap.has(election.id)) {
+        electionsMap.set(election.id, election)
+      }
+    })
+
+    return Array.from(electionsMap.values())
+  }, [elections, activeElections, eligibleElections])
+
+  const filteredAndSortedElections = useMemo(() => {
+    if (!allElections || allElections.length === 0) return []
+
+    let filtered = allElections.filter((election) => {
       const matchesSearch = election.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           election.description.toLowerCase().includes(searchQuery.toLowerCase())
 
@@ -108,17 +129,29 @@ export default function ElectionsPage() {
     })
 
     return filtered
-  }, [elections, searchQuery, statusFilter, typeFilter, sortBy, sortDirection])
+  }, [allElections, searchQuery, statusFilter, typeFilter, sortBy, sortDirection])
 
   const electionsByStatus = useMemo(() => {
-    if (!elections) return { active: [], upcoming: [], completed: [] }
+    if (!allElections || allElections.length === 0) return { active: [], upcoming: [], completed: [] }
+
+    const now = new Date()
 
     return {
-      active: elections.filter(e => e.status === ElectionStatus.ACTIVE),
-      upcoming: elections.filter(e => e.status === ElectionStatus.SCHEDULED),
-      completed: elections.filter(e => e.status === ElectionStatus.COMPLETED)
+      active: allElections.filter(e => {
+        return e.status === ElectionStatus.ACTIVE &&
+               now >= new Date(e.startDate) &&
+               now <= new Date(e.endDate)
+      }),
+      upcoming: allElections.filter(e => {
+        return e.status === ElectionStatus.SCHEDULED ||
+               (e.status === ElectionStatus.DRAFT && new Date(e.startDate) > now)
+      }),
+      completed: allElections.filter(e => {
+        return e.status === ElectionStatus.COMPLETED ||
+               now > new Date(e.endDate)
+      })
     }
-  }, [elections])
+  }, [allElections])
 
   const handleSort = (option: SortOption) => {
     if (sortBy === option) {

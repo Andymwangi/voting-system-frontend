@@ -233,8 +233,8 @@ export default function VotingHistoryPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="h-4 w-4 text-purple-600" />
+              <div className="p-2 bg-sage-100 rounded-lg">
+                <Calendar className="h-4 w-4 text-sage-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">This Year</p>

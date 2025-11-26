@@ -35,7 +35,7 @@ export default function ElectionResultsPage() {
   const params = useParams()
   const electionId = params.id as string
 
-  const { fetchElection } = useElections()
+  const { fetchElection } = useElections({ autoFetch: false })
   const { fetchResults } = useResults()
 
   const [election, setElection] = useState<any>(null)
@@ -68,25 +68,25 @@ export default function ElectionResultsPage() {
   if (electionLoading || resultsLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
               </CardContent>
             </Card>
           </div>
           <div className="space-y-6">
-            <Card>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
               </CardContent>
             </Card>
@@ -148,10 +148,10 @@ export default function ElectionResultsPage() {
               Back to Election
             </Button>
           </Link>
-          <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="h-6 dark:bg-gray-700" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Election Results</h1>
-            <p className="text-gray-600 mt-1">{election.title}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Election Results</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">{election.title}</p>
           </div>
         </div>
 
@@ -181,9 +181,9 @@ export default function ElectionResultsPage() {
       )}
 
       {election.status === ElectionStatus.COMPLETED && (
-        <Alert className="border-green-200 bg-green-50">
-          <Trophy className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-900">
+          <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-800 dark:text-green-300">
             <strong>Election Completed:</strong> These are the final results for this election.
           </AlertDescription>
         </Alert>
@@ -221,7 +221,7 @@ export default function ElectionResultsPage() {
 
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <Award className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                    <Award className="h-6 w-6 text-sage-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold">{totalCandidates}</div>
                     <div className="text-sm text-gray-600">Candidates</div>
                   </CardContent>

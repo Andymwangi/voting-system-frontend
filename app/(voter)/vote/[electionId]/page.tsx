@@ -41,8 +41,8 @@ export default function VotingPage() {
   const { user } = useAuth()
   const electionId = params.electionId as string
 
-  const { fetchElection, elections } = useElections()
-  const { submitVote, isLoading: isSubmitting } = useVoting()
+  const { fetchElection, elections } = useElections({ autoFetch: false })
+  const { submitVote, startSession, updateBallot, currentSession, isLoading: isSubmitting } = useVoting()
 
   const [election, setElection] = useState<any>(null)
   const [candidates, setCandidates] = useState<Candidate[]>([])
@@ -57,11 +57,14 @@ export default function VotingPage() {
         setElection(electionData)
         setElectionLoading(false)
 
-        // Fetch candidates
+        // Fetch candidates (only APPROVED)
         setCandidatesLoading(true)
         const { getCandidatesByElection } = await import('@/lib/api/candidates')
-        const candidatesResponse = await getCandidatesByElection(electionId)
-        setCandidates(candidatesResponse.data.data || [])
+        const candidatesResponse = await getCandidatesByElection(electionId, { status: 'APPROVED' })
+        // Ensure candidates is always an array
+        // Response structure: { data: { data: { candidates: [...], total, pages } } }
+        const candidatesData = candidatesResponse.data.data?.candidates || candidatesResponse.data.data
+        setCandidates(Array.isArray(candidatesData) ? candidatesData : [])
         setCandidatesLoading(false)
       } catch (error) {
         console.error('Error loading election data:', error)
@@ -208,21 +211,41 @@ export default function VotingPage() {
 
   const handleConfirmVote = async () => {
     try {
-      const ballot: BallotData = {
-        electionId: election.id,
-        sessionId: `session-${Date.now()}`,
-        votes: positions.map((position: { id: string }): PositionVote => {
-          const candidateIds = selectedCandidates[position.id]?.map(c => c.id) || []
-          const abstain = abstainedPositions.has(position.id)
-
-          return {
-            positionId: position.id,
-            candidateIds,
-            abstain
-          }
-        })
+      // Start a voting session if one doesn't exist
+      let session = currentSession
+      if (!session) {
+        session = await startSession(election.id)
       }
 
+      console.log('Session:', session);
+      console.log('Election ID:', election.id);
+
+      // Extract the actual session ID - handle both nested and flat structures
+      const sessionId = session.session?.id || session.id
+      console.log('Session ID:', sessionId);
+
+      // Build the votes array
+      const votes: PositionVote[] = positions.map((position: { id: string }): PositionVote => {
+        const candidateIds = selectedCandidates[position.id]?.map(c => c.id) || []
+        const abstain = abstainedPositions.has(position.id)
+
+        return {
+          positionId: position.id,
+          candidateIds,
+          abstain
+        }
+      })
+
+      console.log('Votes array:', votes);
+
+      // Update the ballot in the store before submitting
+      // updateBallot expects: (electionId, sessionId, votes)
+      console.log('Calling updateBallot with:', { electionId: election.id, sessionId, votes });
+      updateBallot(election.id, sessionId, votes)
+
+      console.log('Ballot updated, calling submitVote...');
+
+      // Now submit the vote (uses the updated ballot from the store)
       await submitVote()
       setCurrentStep("submitted")
     } catch (error) {
@@ -365,7 +388,7 @@ export default function VotingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center">
-                    <Award className="h-5 w-5 mr-2 text-purple-600" />
+                    <Award className="h-5 w-5 mr-2 text-sage-600" />
                     {currentPosition?.name}
                   </CardTitle>
                   <CardDescription className="mt-1">

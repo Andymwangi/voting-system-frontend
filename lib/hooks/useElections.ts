@@ -102,6 +102,7 @@ export function useElections(options: UseElectionsOptions = {}): UseElectionsRet
     isLoading,
     error,
     filters,
+    hasInitialFetch,
     fetchElections: storeFetchElections,
     fetchActiveElections: storeFetchActiveElections,
     fetchEligibleElections: storeFetchEligibleElections,
@@ -124,29 +125,62 @@ export function useElections(options: UseElectionsOptions = {}): UseElectionsRet
     totalPages: 0
   });
 
-  // Initialize filters and fetch data on mount
+  // Initialize filters and fetch data on mount - ONCE GLOBALLY
   useEffect(() => {
-    if (Object.keys(initialFilters).length > 0) {
-      setFilters(initialFilters);
+    // Skip if:
+    // 1. Global store already fetched data
+    // 2. Currently loading
+    // 3. AutoFetch is disabled
+    // 4. User not authenticated
+    if (hasInitialFetch || isLoading || !autoFetch || !isAuthenticated) {
+      return;
     }
 
-    if (autoFetch && isAuthenticated) {
-      fetchElections(initialFilters);
-      fetchActiveElections();
-      fetchEligibleElections();
-    }
-  }, [autoFetch, isAuthenticated, initialFilters]);
+    const initializeFetch = async () => {
+      if (Object.keys(initialFilters).length > 0) {
+        setFilters(initialFilters);
+      }
 
-  // Polling for active elections
+      try {
+        // Fetch all data in parallel
+        await Promise.all([
+          storeFetchElections(initialFilters),
+          storeFetchActiveElections(),
+          storeFetchEligibleElections()
+        ]);
+      } catch (err) {
+        console.error('Failed to initialize elections:', err);
+      }
+    };
+
+    initializeFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty array - only run once on mount
+
+  // Polling for active elections to keep data fresh
   useEffect(() => {
-    if (!pollingInterval || !isAuthenticated) return;
+    // Skip if polling disabled or not authenticated
+    if (!pollingInterval || pollingInterval <= 0 || !isAuthenticated) {
+      return;
+    }
 
-    const interval = setInterval(() => {
-      fetchActiveElections();
-    }, pollingInterval);
+    const pollActiveElections = async () => {
+      try {
+        await Promise.all([
+          storeFetchActiveElections(),
+          storeFetchElections(filters)
+        ]);
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [pollingInterval, isAuthenticated]);
+    // Set up polling interval
+    const intervalId = setInterval(pollActiveElections, pollingInterval);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
+  }, [pollingInterval, isAuthenticated, storeFetchActiveElections, storeFetchElections, filters]);
 
   // CRUD Operations
   const fetchElections = useCallback(async (
@@ -161,13 +195,23 @@ export function useElections(options: UseElectionsOptions = {}): UseElectionsRet
       // Update store
       storeFetchElections(filters);
 
-      // Update pagination
-      setPagination({
-        page: data.pagination.page,
-        limit: data.pagination.limit,
-        total: data.pagination.total,
-        totalPages: data.pagination.totalPages
-      });
+      // Update pagination - with null safety
+      if (data && data.pagination) {
+        setPagination({
+          page: data.pagination.page || page,
+          limit: data.pagination.limit || limit,
+          total: data.pagination.total || 0,
+          totalPages: data.pagination.totalPages || 0
+        });
+      } else {
+        // Fallback pagination if API doesn't return pagination data
+        setPagination({
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        });
+      }
 
       return data;
     } catch (error: any) {
@@ -201,28 +245,29 @@ export function useElections(options: UseElectionsOptions = {}): UseElectionsRet
 
   const fetchElection = useCallback(async (id: string): Promise<Election> => {
     try {
-      await storeFetchElection(id);
+      // Call API directly to avoid stale closure issue with currentElection
+      const response = await getElectionById(id);
+      const election = response.data.data;
 
-      if (!currentElection) {
+      if (!election) {
         throw new Error('Election not found');
       }
 
-      return currentElection;
+      // Update store with the fetched election
+      setCurrentElection(election);
+
+      return election;
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to fetch election';
       toast.error('Fetch Failed', message);
       throw error;
     }
-  }, [storeFetchElection, currentElection, toast]);
+  }, [setCurrentElection, toast]);
 
   const createNewElection = useCallback(async (data: CreateElectionData): Promise<Election> => {
     try {
       const election = await storeCreateElection(data);
-      toast.success('Election Created', 'Election has been created successfully.');
-
-      // Refresh elections list
-      await refreshElections();
-
+      // Don't show toast here - let the calling component handle success feedback
       return election;
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to create election';

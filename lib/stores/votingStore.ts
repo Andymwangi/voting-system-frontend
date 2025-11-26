@@ -74,18 +74,23 @@ export const useVotingStore = create<VotingState & VotingActions>((set, get) => 
   },
 
   updateBallot: (electionId: string, sessionId: string, votes: PositionVote[]) => {
+    console.log('Store updateBallot called with:', { electionId, sessionId, votes });
+    const newBallot = {
+      electionId,
+      sessionId,
+      votes,
+      deviceFingerprint: get().currentBallot?.deviceFingerprint,
+    };
+    console.log('Setting currentBallot to:', newBallot);
     set({
-      currentBallot: {
-        electionId,
-        sessionId,
-        votes,
-        deviceFingerprint: get().currentBallot?.deviceFingerprint,
-      },
+      currentBallot: newBallot,
     });
   },
 
   validateCurrentBallot: async () => {
     const { currentBallot } = get();
+    console.log('validateCurrentBallot - currentBallot:', currentBallot);
+
     if (!currentBallot) {
       set({ error: 'No ballot to validate' });
       return false;
@@ -93,6 +98,7 @@ export const useVotingStore = create<VotingState & VotingActions>((set, get) => 
 
     set({ isLoading: true, error: null, validationErrors: [] });
     try {
+      console.log('Calling validateBallot API with:', currentBallot);
       const response = await validateBallot(currentBallot);
       const { valid, errors } = response.data.data!;
 
@@ -103,6 +109,7 @@ export const useVotingStore = create<VotingState & VotingActions>((set, get) => 
 
       return valid;
     } catch (error: any) {
+      console.error('validateBallot API error:', error);
       set({
         isLoading: false,
         error: error.response?.data?.message || 'Failed to validate ballot',

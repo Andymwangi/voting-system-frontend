@@ -299,7 +299,7 @@ export function CandidateCard({
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Position</label>
               <div className="flex items-center">
-                <Award className="h-4 w-4 mr-2 text-purple-500" />
+                <Award className="h-4 w-4 mr-2 text-sage-500" />
                 <span className="text-sm">{position.name}</span>
               </div>
             </div>
