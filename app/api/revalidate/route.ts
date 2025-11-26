@@ -1,16 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { cookies } from 'next/headers';
+
+// Helper to verify auth token
+async function verifyAuth(request: NextRequest) {
+  try {
+    const cookieStore = cookies();
+    const token = cookieStore.get('unielect-voting-access-token')?.value ||
+                  request.headers.get('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return null;
+    }
+
+    // Call backend to verify token and get user info
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/profile`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Auth verification error:', error);
+    return null;
+  }
+}
 
 // Revalidate specific paths or tags for cache management
 export async function POST(request: NextRequest) {
   try {
-    // Get the current session to verify authentication
-    const session = await getServerSession(authOptions);
+    // Get the current user to verify authentication
+    const user = await verifyAuth(request);
 
     // Check if user is authenticated and has appropriate permissions
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -18,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only allow admins and super admins to trigger revalidation
-    const userRole = session.user.role;
+    const userRole = user.role;
     if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
@@ -260,16 +289,16 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check revalidation status or get available options
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await verifyAuth(request);
 
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const userRole = session.user.role;
+    const userRole = user.role;
     if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
