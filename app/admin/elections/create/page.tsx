@@ -69,6 +69,7 @@ import {
   YEAR_OF_STUDY_OPTIONS,
 } from '@/lib/enums'
 import { CreateElectionData, CreatePositionData } from '@/lib/types'
+import { getPositionTemplates, hasPositionTemplates } from '@/lib/config/positionTemplates'
 
 // Validation Schema
 const positionSchema = z.object({
@@ -144,7 +145,7 @@ type ElectionFormValues = z.infer<typeof electionSchema>
 
 export default function CreateElectionPage() {
   const router = useRouter()
-  const { createNewElection } = useElections()
+  const { createNewElection } = useElections({ autoFetch: false })
   const { toast } = useNotificationStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentTab, setCurrentTab] = useState('basic')
@@ -187,6 +188,8 @@ export default function CreateElectionPage() {
     name: 'positions',
   })
 
+  const watchedElectionType = form.watch('type')
+
   const onSubmit = async (data: ElectionFormValues) => {
     try {
       setIsSubmitting(true)
@@ -224,15 +227,27 @@ export default function CreateElectionPage() {
         })),
       }
 
-      const election = await createNewElection(electionData)
+      // Create election
+      const newElection = await createNewElection(electionData)
 
-      toast.success('Election Created', 'Election has been created successfully.')
-      router.push(`/admin/elections/${election.id}`)
+      // Show success toast with redirect information
+      toast.success(
+        'Election Created Successfully',
+        `"${newElection.title}" has been created. Redirecting...`
+      )
+
+      // Redirect to the newly created election page after a brief delay
+      setTimeout(() => {
+        router.push(`/admin/elections/${newElection.id}`)
+      }, 1500)
     } catch (error: any) {
       console.error('Failed to create election:', error)
-      toast.error('Creation Failed', error.message || 'Failed to create election')
+      // Error toast is already shown by the hook
     } finally {
-      setIsSubmitting(false)
+      // Always reset submitting state after a delay (to allow redirect to happen)
+      setTimeout(() => {
+        setIsSubmitting(false)
+      }, 2000)
     }
   }
 
@@ -952,18 +967,56 @@ export default function CreateElectionPage() {
                               <FormField
                                 control={form.control}
                                 name={`positions.${index}.name`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Position Name *</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="e.g., President, Vice President, Secretary"
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
+                                render={({ field }) => {
+                                  const showDropdown = hasPositionTemplates(watchedElectionType);
+
+                                  return (
+                                    <FormItem>
+                                      <FormLabel>Position Name *</FormLabel>
+                                      {showDropdown ? (
+                                        <Select
+                                          onValueChange={(value) => {
+                                            if (value === '__custom__') {
+                                              field.onChange('');
+                                            } else {
+                                              field.onChange(value);
+                                              const template = getPositionTemplates(watchedElectionType).find(t => t.name === value);
+                                              if (template) {
+                                                form.setValue(`positions.${index}.description`, template.description);
+                                                form.setValue(`positions.${index}.maxSelections`, template.maxSelections);
+                                                form.setValue(`positions.${index}.minSelections`, 1);
+                                                form.setValue(`positions.${index}.order`, template.order);
+                                              }
+                                            }
+                                          }}
+                                          value={field.value || ''}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select position from template" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {getPositionTemplates(watchedElectionType).map((template) => (
+                                              <SelectItem key={template.name} value={template.name}>
+                                                {template.name}
+                                              </SelectItem>
+                                            ))}
+                                            <SelectItem value="__custom__">Custom Position...</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      ) : (
+                                        <FormControl>
+                                          <Input
+                                            placeholder="e.g., President, Vice President, Secretary"
+                                            {...field}
+                                          />
+                                        </FormControl>
+                                      )}
+                                      <FormMessage />
+                                    </FormItem>
+                                  );
+                                }}
                               />
 
                               <FormField

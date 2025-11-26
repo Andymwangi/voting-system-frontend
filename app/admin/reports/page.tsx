@@ -55,13 +55,13 @@ export default function AdminReportsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 bg-purple-50/50">
+        <Card className="border-sage-200 bg-sage-50/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Voting Analytics</CardTitle>
-            <Activity className="h-4 w-4 text-purple-600" />
+            <Activity className="h-4 w-4 text-sage-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">Analytics</div>
+            <div className="text-2xl font-bold text-sage-600">Analytics</div>
             <p className="text-xs text-muted-foreground mt-1">
               Participation and trends
             </p>
@@ -125,7 +125,7 @@ export default function AdminReportsPage() {
 
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-2">
-                <Activity className="w-4 h-4 text-purple-600" />
+                <Activity className="w-4 h-4 text-sage-600" />
                 Voting Analytics
               </h4>
               <ul className="text-sm text-muted-foreground space-y-1 ml-6">
@@ -189,7 +189,7 @@ export default function AdminReportsPage() {
 
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-600" />
+                  <FileText className="w-4 h-4 text-sage-600" />
                   <div>
                     <p className="font-medium">JSON Data</p>
                     <p className="text-sm text-muted-foreground">

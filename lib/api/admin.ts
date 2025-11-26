@@ -11,7 +11,7 @@ const adminApi = axios.create({
 });
 
 adminApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('jkuat-voting-access-token');
+  const token = localStorage.getItem('unielect-voting-access-token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

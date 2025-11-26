@@ -136,13 +136,28 @@ export default function AdminElectionDetailsPage() {
     loadElectionData()
   }, [electionId])
 
+  // Polling for active elections to keep stats fresh
+  useEffect(() => {
+    if (election?.status === ElectionStatus.ACTIVE) {
+      // Poll every 30 seconds for active elections
+      const pollInterval = setInterval(() => {
+        loadElectionData()
+      }, 30000)
+
+      return () => clearInterval(pollInterval)
+    }
+  }, [election?.status])
+
   const loadElectionData = async () => {
     setIsLoading(true)
     try {
       const [electionResponse, candidatesResponse, statsResponse] = await Promise.all([
         getElectionById(electionId),
         getCandidatesByElection(electionId),
-        getElectionStats(electionId).catch(() => null) // Stats might not be available
+        getElectionStats(electionId).catch((error) => {
+          console.warn('Failed to load election stats:', error)
+          return null
+        }) // Stats might not be available
       ])
 
       if (electionResponse.data.success && electionResponse.data.data) {
@@ -150,7 +165,9 @@ export default function AdminElectionDetailsPage() {
       }
 
       if (candidatesResponse.data.success && candidatesResponse.data.data) {
-        setCandidates(candidatesResponse.data.data)
+        // Backend returns { candidates: [], pagination: {} }
+        const candidatesData = candidatesResponse.data.data as any
+        setCandidates(candidatesData.candidates || [])
       }
 
       if (statsResponse?.data.success && statsResponse.data.data) {
@@ -233,6 +250,7 @@ export default function AdminElectionDetailsPage() {
       let response: any
       switch (actionDialog.type) {
         case 'start':
+          console.log('Starting election with ID:', election.id)
           response = await startElection(election.id)
           break
         case 'end':
@@ -250,8 +268,12 @@ export default function AdminElectionDetailsPage() {
         toast.success(`Election ${actionDialog.type}ed successfully`)
         loadElectionData() // Reload to get updated status
       }
-    } catch (error) {
-      toast.error(`Failed to ${actionDialog.type} election`)
+    } catch (error: any) {
+      console.error(`Failed to ${actionDialog.type} election:`, error)
+      console.error('Error response:', error.response)
+      console.error('Error request:', error.request)
+      const errorMessage = error.response?.data?.message || error.message || `Failed to ${actionDialog.type} election`
+      toast.error(errorMessage)
     } finally {
       setActionDialog({ open: false, type: null, isLoading: false })
     }
@@ -279,10 +301,13 @@ export default function AdminElectionDetailsPage() {
     const actions = []
 
     switch (election.status) {
+      case ElectionStatus.DRAFT:
+        // Allow starting DRAFT elections (backend will validate if there are approved candidates)
+        actions.push({ type: 'start', label: 'Start Election', icon: Play, variant: 'default' })
+        break
       case ElectionStatus.SCHEDULED:
-        if (electionTiming?.hasStarted) {
-          actions.push({ type: 'start', label: 'Start Election', icon: Play, variant: 'default' })
-        }
+        // Allow starting SCHEDULED elections anytime (manual override or when scheduled time reached)
+        actions.push({ type: 'start', label: 'Start Election', icon: Play, variant: 'default' })
         break
       case ElectionStatus.ACTIVE:
         actions.push({ type: 'pause', label: 'Pause Election', icon: Pause, variant: 'outline' })
@@ -563,7 +588,7 @@ export default function AdminElectionDetailsPage() {
 
                 {election.encryptVotes && (
                   <div className="flex items-center space-x-2 text-sm">
-                    <Shield className="h-4 w-4 text-purple-600" />
+                    <Shield className="h-4 w-4 text-sage-600" />
                     <span>Vote encryption enabled</span>
                   </div>
                 )}

@@ -70,7 +70,7 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react'
-import {
+import type {
   Election,
   SafeUser,
   AvailableReport,
@@ -159,7 +159,7 @@ const REPORT_TYPES = [
     name: 'Voting Analytics',
     description: 'Voting patterns, turnout, and participation analysis',
     icon: TrendingUp,
-    color: 'text-purple-600 bg-purple-50'
+    color: 'text-sage-600 bg-sage-50'
   },
   {
     id: 'audit',

@@ -61,6 +61,7 @@ import {
 } from '@/lib/types'
 import { API_ENDPOINTS } from '@/lib/constants'
 import { NotificationType, AuditCategory, AuditSeverity } from '@/lib/enums'
+import { getAuditLogs } from '@/lib/api/audit'
 
 interface AuditFilters {
   search?: string
@@ -110,7 +111,7 @@ const CATEGORY_ICONS: Record<AuditCategory, React.ComponentType<{ className?: st
 }
 
 const CATEGORY_COLORS: Record<AuditCategory, string> = {
-  [AuditCategory.AUTH]: 'text-purple-600 bg-purple-50',
+  [AuditCategory.AUTH]: 'text-sage-600 bg-sage-50',
   [AuditCategory.ELECTION]: 'text-blue-600 bg-blue-50',
   [AuditCategory.VOTE]: 'text-green-600 bg-green-50',
   [AuditCategory.ADMIN]: 'text-orange-600 bg-orange-50',
@@ -251,38 +252,24 @@ export const AuditLog: React.FC<AuditLogProps> = ({
   } = useQuery({
     queryKey: ['audit-logs', filters, pagination],
     queryFn: async (): Promise<PaginatedResponse<AuditLogType>> => {
-      const params = new URLSearchParams()
+      const response = await getAuditLogs({
+        page: pagination.page,
+        limit: pagination.limit,
+        sortBy: pagination.sortBy,
+        order: pagination.order,
+        search: filters.search,
+        category: filters.category,
+        severity: filters.severity,
+        userId: filters.userId,
+        startDate: filters.dateRange?.from,
+        endDate: filters.dateRange?.to,
+      })
 
-      // Add pagination params
-      params.append('page', pagination.page.toString())
-      params.append('limit', pagination.limit.toString())
-      if (pagination.sortBy) params.append('sortBy', pagination.sortBy)
-      if (pagination.order) params.append('order', pagination.order)
-
-      // Add filter params
-      if (filters.search) params.append('search', filters.search)
-      if (filters.category) params.append('category', filters.category)
-      if (filters.severity) params.append('severity', filters.severity)
-      if (filters.userId) params.append('userId', filters.userId)
-      if (filters.ipAddress) params.append('ipAddress', filters.ipAddress)
-      if (filters.dateRange?.from) {
-        params.append('startDate', filters.dateRange.from.toISOString())
-      }
-      if (filters.dateRange?.to) {
-        params.append('endDate', filters.dateRange.to.toISOString())
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to fetch audit logs')
       }
 
-      const response = await fetch(`${API_ENDPOINTS.AUDIT.LOGS}?${params}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch audit logs')
-      }
-
-      const result: ApiResponse<PaginatedResponse<AuditLogType>> = await response.json()
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch audit logs')
-      }
-
-      return result.data
+      return response.data.data
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   })

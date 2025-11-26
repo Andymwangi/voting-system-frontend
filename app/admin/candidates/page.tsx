@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -91,7 +91,8 @@ export default function AdminCandidatesPage() {
     queryKey: ['elections'],
     queryFn: async () => {
       const response = await getElections()
-      return response.data
+      // Handle paginated response - return the data array
+      return response.data.data?.data || []
     }
   })
 
@@ -111,10 +112,10 @@ export default function AdminCandidatesPage() {
     enabled: selectedElection !== ''
   })
 
-  const candidates = candidatesData?.data || []
+  const candidates = useMemo(() => candidatesData?.data || [], [candidatesData?.data])
 
-  // Filter candidates based on search and filters
-  useEffect(() => {
+  // Filter candidates based on search and filters using useMemo to prevent infinite loop
+  const filteredCandidatesComputed = useMemo(() => {
     let filtered = candidates
 
     // Search filter
@@ -132,8 +133,13 @@ export default function AdminCandidatesPage() {
       filtered = filtered.filter(candidate => candidate.status === statusFilter)
     }
 
-    setFilteredCandidates(filtered)
+    return filtered
   }, [candidates, searchTerm, statusFilter])
+
+  // Update state when filtered candidates change
+  useEffect(() => {
+    setFilteredCandidates(filteredCandidatesComputed)
+  }, [filteredCandidatesComputed])
 
   // Mutation for updating candidate status
   const updateStatusMutation = useMutation({
@@ -223,7 +229,7 @@ export default function AdminCandidatesPage() {
       case 'ACTIVE':
         return 'bg-green-100 text-green-800'
       case 'COMPLETED':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-sage-100 text-sage-800'
       case 'CANCELLED':
         return 'bg-red-100 text-red-800'
       default:
@@ -406,7 +412,7 @@ export default function AdminCandidatesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Elections</SelectItem>
-                {(electionsData as any)?.data?.map((election: any) => (
+                {Array.isArray(electionsData) && electionsData.map((election: any) => (
                   <SelectItem key={election.id} value={election.id}>
                     {election.title}
                   </SelectItem>

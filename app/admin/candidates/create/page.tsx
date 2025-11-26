@@ -96,7 +96,8 @@ export default function CreateCandidatePage() {
     queryKey: ['elections'],
     queryFn: async () => {
       const response = await getElections()
-      return response.data
+      // Handle paginated response - return the data array
+      return response.data.data?.data || []
     }
   })
 
@@ -110,7 +111,7 @@ export default function CreateCandidatePage() {
   })
 
   // Get positions for selected election
-  const selectedElectionData = (electionsData as any)?.data?.data?.find((e: { id: string }) => e.id === selectedElection)
+  const selectedElectionData = Array.isArray(electionsData) ? electionsData.find((e: { id: string }) => e.id === selectedElection) : null
   const positions = selectedElectionData?.positions || []
 
   // Create candidate mutation
@@ -278,7 +279,7 @@ export default function CreateCandidatePage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {(electionsData as any)?.data?.map((election: any) => (
+                            {Array.isArray(electionsData) && electionsData.map((election: any) => (
                               <SelectItem key={election.id} value={election.id}>
                                 {election.title} - {election.status}
                               </SelectItem>

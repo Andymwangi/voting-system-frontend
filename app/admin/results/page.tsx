@@ -99,7 +99,7 @@ export default function AdminResultsPage() {
   const { user } = useAuth()
   const { addNotification } = useNotifications()
   const queryClient = useQueryClient()
-  const [selectedElection, setSelectedElection] = useState<string>('')
+  const [selectedElection, setSelectedElection] = useState<string>('none')
   const [selectedPosition, setSelectedPosition] = useState<string>('all')
 
   // Fetch elections
@@ -107,7 +107,8 @@ export default function AdminResultsPage() {
     queryKey: ['elections'],
     queryFn: async () => {
       const response = await getElections()
-      return response.data
+      // Handle paginated response - return the data array
+      return response.data.data?.data || []
     }
   })
 
@@ -115,11 +116,11 @@ export default function AdminResultsPage() {
   const { data: resultsData, isLoading: loadingResults, error } = useQuery({
     queryKey: ['results', selectedElection],
     queryFn: async () => {
-      if (!selectedElection) return null
+      if (!selectedElection || selectedElection === 'none') return null
       const response = await getElectionResults(selectedElection)
       return response.data
     },
-    enabled: !!selectedElection
+    enabled: !!selectedElection && selectedElection !== 'none'
   })
 
   // Calculate results mutation
@@ -184,7 +185,7 @@ export default function AdminResultsPage() {
       case 'ACTIVE':
         return 'bg-green-100 text-green-800'
       case 'COMPLETED':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-sage-100 text-sage-800'
       case 'CANCELLED':
         return 'bg-red-100 text-red-800'
       default:
@@ -196,7 +197,7 @@ export default function AdminResultsPage() {
     ? resultsData?.data?.positionResults
     : resultsData?.data?.positionResults?.filter(p => p.position.id === selectedPosition)
 
-  const selectedElectionData = (electionsData?.data as any)?.data?.find((e: any) => e.id === selectedElection)
+  const selectedElectionData = Array.isArray(electionsData) ? electionsData.find((e: any) => e.id === selectedElection) : null
 
   if (error) {
     return (
@@ -274,7 +275,8 @@ export default function AdminResultsPage() {
                   <SelectValue placeholder="Select an election to view results" />
                 </SelectTrigger>
                 <SelectContent>
-                  {((electionsData?.data as any)?.data || []).map((election: any) => (
+                  <SelectItem value="none">Select an election</SelectItem>
+                  {Array.isArray(electionsData) && electionsData.map((election: any) => (
                     <SelectItem key={election.id} value={election.id}>
                       <div className="flex items-center justify-between w-full">
                         <span>{election.title}</span>
@@ -291,7 +293,7 @@ export default function AdminResultsPage() {
               </Select>
             </div>
 
-            {selectedElection && resultsData?.data && (
+            {selectedElection && selectedElection !== 'none' && resultsData?.data && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"

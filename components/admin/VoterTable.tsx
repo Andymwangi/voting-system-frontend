@@ -339,34 +339,34 @@ export const VoterTable: React.FC<VoterTableProps> = ({
   } = useQuery({
     queryKey: ['admin-voters', filters, pagination],
     queryFn: async (): Promise<PaginatedResponse<SafeUser>> => {
-      const params = new URLSearchParams()
+      const { getAllUsers } = await import('@/lib/api/admin')
 
-      // Add pagination params
-      params.append('page', pagination.page.toString())
-      params.append('limit', pagination.limit.toString())
-      if (pagination.sortBy) params.append('sortBy', pagination.sortBy)
-      if (pagination.order) params.append('order', pagination.order)
+      // Prepare params
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+      }
+
+      // Add sorting params
+      if (pagination.sortBy) params.sortBy = pagination.sortBy
+      if (pagination.order) params.order = pagination.order
 
       // Add filter params
-      if (filters.search) params.append('search', filters.search)
-      if (filters.faculty) params.append('faculty', filters.faculty)
-      if (filters.department) params.append('department', filters.department)
-      if (filters.yearOfStudy) params.append('yearOfStudy', filters.yearOfStudy.toString())
-      if (filters.role) params.append('role', filters.role)
-      if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString())
-      if (filters.isVerified !== undefined) params.append('isVerified', filters.isVerified.toString())
+      if (filters.search) params.search = filters.search
+      if (filters.faculty && filters.faculty !== 'all') params.faculty = filters.faculty
+      if (filters.department) params.department = filters.department
+      if (filters.yearOfStudy) params.yearOfStudy = filters.yearOfStudy
+      if (filters.role && (filters.role as string) !== 'all') params.role = filters.role
+      if (filters.isActive !== undefined) params.isActive = filters.isActive
+      if (filters.isVerified !== undefined) params.isVerified = filters.isVerified
 
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.USERS}?${params}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch voters')
+      const response = await getAllUsers(params)
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to fetch voters')
       }
 
-      const result: ApiResponse<PaginatedResponse<SafeUser>> = await response.json()
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch voters')
-      }
-
-      return result.data
+      return response.data.data
     }
   })
 
@@ -521,14 +521,14 @@ export const VoterTable: React.FC<VoterTableProps> = ({
             <div>
               <Label htmlFor="faculty">Faculty</Label>
               <Select
-                value={filters.faculty || ''}
-                onValueChange={(value) => handleFilterChange('faculty', value || undefined)}
+                value={filters.faculty || 'all'}
+                onValueChange={(value) => handleFilterChange('faculty', value === 'all' ? undefined : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All faculties" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All faculties</SelectItem>
+                  <SelectItem value="all">All faculties</SelectItem>
                   {UNIVERSITY_FACULTIES.map(faculty => (
                     <SelectItem key={faculty} value={faculty}>
                       {faculty}
@@ -541,14 +541,14 @@ export const VoterTable: React.FC<VoterTableProps> = ({
             <div>
               <Label htmlFor="role">Role</Label>
               <Select
-                value={filters.role || ''}
-                onValueChange={(value) => handleFilterChange('role', value || undefined)}
+                value={filters.role || 'all'}
+                onValueChange={(value) => handleFilterChange('role', value === 'all' ? undefined : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All roles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All roles</SelectItem>
+                  <SelectItem value="all">All roles</SelectItem>
                   {Object.entries(USER_ROLE_LABELS).map(([key, label]) => (
                     <SelectItem key={key} value={key}>
                       {label}
@@ -561,14 +561,14 @@ export const VoterTable: React.FC<VoterTableProps> = ({
             <div>
               <Label htmlFor="status">Status</Label>
               <Select
-                value={filters.isActive === undefined ? '' : filters.isActive.toString()}
-                onValueChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
+                value={filters.isActive === undefined ? 'all' : filters.isActive.toString()}
+                onValueChange={(value) => handleFilterChange('isActive', value === 'all' ? undefined : value === 'true')}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="true">Active</SelectItem>
                   <SelectItem value="false">Inactive</SelectItem>
                 </SelectContent>

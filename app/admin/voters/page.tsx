@@ -141,17 +141,15 @@ export default function AdminVotersPage() {
   } = useQuery({
     queryKey: ['admin-voter-stats', refreshTrigger],
     queryFn: async (): Promise<AdminUserSummary> => {
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.USERS}?summary=true`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch voter statistics')
+      const { getAllUsers } = await import('@/lib/api/admin')
+
+      const response = await getAllUsers({ summary: true } as any)
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to fetch voter statistics')
       }
 
-      const result: ApiResponse<AdminUserSummary> = await response.json()
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch voter statistics')
-      }
-
-      return result.data
+      return response.data.data as any
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   })
@@ -274,19 +272,21 @@ export default function AdminVotersPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <VoterStatsCard
             title="Total Voters"
-            value={voterStats.totalUsers}
-            subtitle={`${voterStats.verifiedUsers} verified`}
+            value={voterStats.totalUsers || 0}
+            subtitle={`${voterStats.verifiedUsers || 0} verified`}
             icon={Users}
-            trend={{
-              value: voterStats.newRegistrations.thisWeek,
-              isPositive: true,
-              label: 'new this week'
-            }}
+            {...(voterStats.newRegistrations?.thisWeek && {
+              trend: {
+                value: voterStats.newRegistrations.thisWeek,
+                isPositive: true,
+                label: 'new this week'
+              }
+            })}
           />
 
           <VoterStatsCard
             title="Active Voters"
-            value={voterStats.activeUsers}
+            value={voterStats.activeUsers || 0}
             subtitle="Currently active"
             icon={UserCheck}
             variant="success"
@@ -294,22 +294,24 @@ export default function AdminVotersPage() {
 
           <VoterStatsCard
             title="Verification Rate"
-            value={`${Math.round((voterStats.verifiedUsers / voterStats.totalUsers) * 100)}%`}
-            subtitle={`${voterStats.pendingVerifications} pending`}
+            value={voterStats.totalUsers ? `${Math.round(((voterStats.verifiedUsers || 0) / voterStats.totalUsers) * 100)}%` : '0%'}
+            subtitle={`${voterStats.pendingVerifications || 0} pending`}
             icon={Shield}
-            variant={voterStats.pendingVerifications > 50 ? 'warning' : 'success'}
+            variant={(voterStats.pendingVerifications || 0) > 50 ? 'warning' : 'success'}
           />
 
           <VoterStatsCard
             title="New Registrations"
-            value={voterStats.newRegistrations.today}
+            value={voterStats.newRegistrations?.today || 0}
             subtitle="Today"
             icon={Calendar}
-            trend={{
-              value: 15,
-              isPositive: true,
-              label: 'vs yesterday'
-            }}
+            {...(voterStats.newRegistrations?.thisWeek && {
+              trend: {
+                value: 15,
+                isPositive: true,
+                label: 'vs yesterday'
+              }
+            })}
           />
         </div>
       )}

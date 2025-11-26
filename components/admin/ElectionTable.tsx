@@ -54,8 +54,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Election } from "@/lib/types"
+import  { Election } from "@/lib/types"
 import { ElectionStatus, ElectionType, ELECTION_STATUS_LABELS, ELECTION_TYPE_LABELS } from "@/lib/enums"
 import { cn } from "@/lib/utils/cn"
 import { format } from "date-fns"

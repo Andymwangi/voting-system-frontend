@@ -337,7 +337,7 @@ export default function AdminAuditPage() {
                     {auditStats.byCategory.map((category, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {category.category === AuditCategory.AUTH && <Shield className="h-4 w-4 text-purple-600" />}
+                          {category.category === AuditCategory.AUTH && <Shield className="h-4 w-4 text-sage-600" />}
                           {category.category === AuditCategory.ELECTION && <Vote className="h-4 w-4 text-blue-600" />}
                           {category.category === AuditCategory.VOTE && <CheckCircle className="h-4 w-4 text-green-600" />}
                           {category.category === AuditCategory.ADMIN && <Settings className="h-4 w-4 text-orange-600" />}
@@ -554,7 +554,7 @@ export default function AdminAuditPage() {
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-purple-600" />
+                        <Settings className="h-4 w-4 text-sage-600" />
                         <span className="text-sm">Admin Actions</span>
                       </div>
                       <span className="text-sm font-medium">0</span>
@@ -603,7 +603,7 @@ export default function AdminAuditPage() {
                     <p className="text-sm text-muted-foreground">Retention Period</p>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-2xl font-bold text-sage-600">
                       {auditStats?.total || 0}
                     </div>
                     <p className="text-sm text-muted-foreground">Total Records</p>

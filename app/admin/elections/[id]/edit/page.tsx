@@ -169,11 +169,15 @@ export default function AdminElectionEditPage() {
 
   // Track form changes
   useEffect(() => {
-    const subscription = form.watch(() => {
-      setHasUnsavedChanges(true)
+    const subscription = form.watch((value, { name, type }) => {
+      // Only set unsaved changes if a field was actually modified by the user
+      if (name && type === 'change') {
+        console.log("Form field changed:", name, "Type:", type)
+        setHasUnsavedChanges(true)
+      }
     })
     return () => subscription.unsubscribe()
-  }, [form])
+  }, [])
 
   const loadElectionData = async () => {
     setIsLoading(true)
@@ -226,6 +230,7 @@ export default function AdminElectionEditPage() {
   }
 
   const onSubmit = async (data: ElectionFormData) => {
+    console.log("Form submission started", data)
     setIsSaving(true)
     try {
       const updateData: UpdateElectionData = {
@@ -252,14 +257,21 @@ export default function AdminElectionEditPage() {
         positions: data.positions,
       }
 
+      console.log("Sending update request with data:", updateData)
       const response = await updateElection(electionId, updateData)
+      console.log("Update response:", response)
+
       if (response.data.success) {
         toast.success("Election updated successfully")
         setHasUnsavedChanges(false)
         router.push(`/admin/elections/${electionId}`)
+      } else {
+        toast.error(response.data.error || response.data.message || "Failed to update election")
       }
-    } catch (error) {
-      toast.error("Failed to update election")
+    } catch (error: any) {
+      console.error("Failed to update election:", error)
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Failed to update election"
+      toast.error(errorMessage)
     } finally {
       setIsSaving(false)
     }

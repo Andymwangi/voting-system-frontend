@@ -111,6 +111,14 @@ import {
   ELECTION_STATUS_LABELS,
   ELECTION_TYPE_LABELS,
 } from '@/lib/enums'
+import {
+  startElection as startElectionAPI,
+  endElection as endElectionAPI,
+  pauseElection as pauseElectionAPI,
+  resumeElection as resumeElectionAPI,
+  archiveElection as archiveElectionAPI,
+  deleteElection as deleteElectionAPI,
+} from '@/lib/api/elections'
 
 interface ElectionFilters {
   search?: string
@@ -328,36 +336,75 @@ export default function AdminElectionsPage() {
   } = useQuery({
     queryKey: ['admin-elections', filters, pagination, refreshTrigger],
     queryFn: async (): Promise<PaginatedResponse<Election>> => {
-      const params = new URLSearchParams()
+      const { getElections } = await import('@/lib/api/elections')
 
-      // Add pagination params
-      params.append('page', pagination.page.toString())
-      params.append('limit', pagination.limit.toString())
-      if (pagination.sortBy) params.append('sortBy', pagination.sortBy)
-      if (pagination.order) params.append('order', pagination.order)
-
-      // Add filter params
-      if (filters.search) params.append('search', filters.search)
-      if (filters.type) params.append('type', filters.type)
-      if (filters.status) params.append('status', filters.status)
-      if (filters.dateRange?.from) {
-        params.append('startDate', filters.dateRange.from.toISOString())
-      }
-      if (filters.dateRange?.to) {
-        params.append('endDate', filters.dateRange.to.toISOString())
+      // Prepare params
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
       }
 
-      const response = await fetch(`${API_ENDPOINTS.ELECTIONS.LIST}?${params}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch elections')
+      // Add sorting if specified
+      if (pagination.sortBy) params.sortBy = pagination.sortBy
+      if (pagination.order) params.order = pagination.order
+
+      // Add filters if specified
+      if (filters.search) params.search = filters.search
+      if (filters.type && (filters.type as string) !== 'all') params.type = filters.type
+      if (filters.status && (filters.status as string) !== 'all') params.status = filters.status
+      if (filters.dateRange?.from) params.startDate = filters.dateRange.from.toISOString()
+      if (filters.dateRange?.to) params.endDate = filters.dateRange.to.toISOString()
+
+      const response = await getElections(params)
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to fetch elections')
       }
 
-      const result: ApiResponse<PaginatedResponse<Election>> = await response.json()
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch elections')
-      }
+      const backendData = response.data.data as any
 
-      return result.data
+      // Transform backend response { elections, total, pages } to frontend format { data, pagination }
+      return {
+        data: backendData.elections || [],
+        pagination: {
+          total: backendData.total || 0,
+          totalPages: backendData.pages || 0,
+          page: pagination.page,
+          limit: pagination.limit,
+          hasNext: pagination.page < (backendData.pages || 0),
+          hasPrev: pagination.page > 1
+        }
+      }
+    }
+  })
+
+  // Fetch election stats separately to show accurate counts
+  const {
+    data: electionStats,
+  } = useQuery({
+    queryKey: ['admin-election-stats', refreshTrigger],
+    queryFn: async () => {
+      const { getElections } = await import('@/lib/api/elections')
+
+      // Fetch all elections to get accurate stats (without pagination)
+      const [allResponse, activeResponse, scheduledResponse, completedResponse] = await Promise.all([
+        getElections({ page: 1, limit: 1 }), // Just get the total count
+        getElections({ page: 1, limit: 1, filters: { status: ElectionStatus.ACTIVE } }),
+        getElections({ page: 1, limit: 1, filters: { status: ElectionStatus.SCHEDULED } }),
+        getElections({ page: 1, limit: 1, filters: { status: ElectionStatus.COMPLETED } })
+      ])
+
+      const allData = allResponse.data.data as any
+      const activeData = activeResponse.data.data as any
+      const scheduledData = scheduledResponse.data.data as any
+      const completedData = completedResponse.data.data as any
+
+      return {
+        total: allData?.total || 0,
+        active: activeData?.total || 0,
+        scheduled: scheduledData?.total || 0,
+        completed: completedData?.total || 0
+      }
     }
   })
 
@@ -370,42 +417,52 @@ export default function AdminElectionsPage() {
       electionId: string
       action: 'start' | 'pause' | 'resume' | 'end' | 'archive' | 'delete'
     }) => {
-      let endpoint = ''
-      let method = 'PUT'
+      console.log(`[Elections] Executing ${action} action for election ${electionId}`)
 
-      switch (action) {
-        case 'start':
-          endpoint = API_ENDPOINTS.ELECTIONS.START(electionId)
-          break
-        case 'pause':
-          endpoint = API_ENDPOINTS.ELECTIONS.PAUSE(electionId)
-          break
-        case 'resume':
-          endpoint = API_ENDPOINTS.ELECTIONS.RESUME(electionId)
-          break
-        case 'end':
-          endpoint = API_ENDPOINTS.ELECTIONS.END(electionId)
-          break
-        case 'archive':
-          endpoint = API_ENDPOINTS.ELECTIONS.ARCHIVE(electionId)
-          break
-        case 'delete':
-          endpoint = API_ENDPOINTS.ELECTIONS.DELETE(electionId)
-          method = 'DELETE'
-          break
+      let response
+
+      try {
+        switch (action) {
+          case 'start':
+            response = await startElectionAPI(electionId)
+            break
+          case 'pause':
+            response = await pauseElectionAPI(electionId)
+            break
+          case 'resume':
+            response = await resumeElectionAPI(electionId)
+            break
+          case 'end':
+            response = await endElectionAPI(electionId)
+            break
+          case 'archive':
+            response = await archiveElectionAPI(electionId)
+            break
+          case 'delete':
+            response = await deleteElectionAPI(electionId)
+            break
+          default:
+            throw new Error(`Unknown action: ${action}`)
+        }
+
+        console.log(`[Elections] ${action} successful:`, response.data)
+
+        if (!response.data.success) {
+          throw new Error(response.data.error || response.data.message || `Failed to ${action} election`)
+        }
+
+        return response.data
+      } catch (error: any) {
+        console.error(`[Elections] ${action} failed:`, error)
+
+        // Extract error message from axios error
+        const errorMessage = error.response?.data?.error
+          || error.response?.data?.message
+          || error.message
+          || `Failed to ${action} election`
+
+        throw new Error(errorMessage)
       }
-
-      const response = await fetch(endpoint, { method })
-      if (!response.ok) {
-        throw new Error(`Failed to ${action} election`)
-      }
-
-      const result: ApiResponse = await response.json()
-      if (!result.success) {
-        throw new Error(result.error || `Failed to ${action} election`)
-      }
-
-      return result
     },
     onSuccess: (_, variables) => {
       addNotification({
@@ -585,18 +642,18 @@ export default function AdminElectionsPage() {
       </div>
 
       {/* Statistics Cards */}
-      {electionsData && (
+      {electionStats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <ElectionStatsCard
             title="Total Elections"
-            value={electionsData.pagination.total}
+            value={electionStats.total}
             subtitle="All time"
             icon={Calendar}
           />
 
           <ElectionStatsCard
             title="Active Elections"
-            value={electionsData.data.filter(e => e.status === ElectionStatus.ACTIVE).length}
+            value={electionStats.active}
             subtitle="Currently running"
             icon={Activity}
             variant="success"
@@ -604,7 +661,7 @@ export default function AdminElectionsPage() {
 
           <ElectionStatsCard
             title="Scheduled Elections"
-            value={electionsData.data.filter(e => e.status === ElectionStatus.SCHEDULED).length}
+            value={electionStats.scheduled}
             subtitle="Upcoming"
             icon={Clock}
             variant="default"
@@ -612,7 +669,7 @@ export default function AdminElectionsPage() {
 
           <ElectionStatsCard
             title="Completed Elections"
-            value={electionsData.data.filter(e => e.status === ElectionStatus.COMPLETED).length}
+            value={electionStats.completed}
             subtitle="Finished"
             icon={CheckCircle}
             variant="default"
@@ -664,7 +721,7 @@ export default function AdminElectionsPage() {
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All types</SelectItem>
+                      <SelectItem value="all">All types</SelectItem>
                       {Object.entries(ELECTION_TYPE_LABELS).map(([key, label]) => (
                         <SelectItem key={key} value={key}>
                           {label}
@@ -684,7 +741,7 @@ export default function AdminElectionsPage() {
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All statuses</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       {Object.entries(ELECTION_STATUS_LABELS).map(([key, label]) => (
                         <SelectItem key={key} value={key}>
                           {label}
